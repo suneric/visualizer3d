@@ -26,6 +26,9 @@ namespace V3D {
       WSPointCloudPtr SortPointsInZ(const WSPointCloudPtr cloud, double resolution, double min, double max);
       WSPointCloudPtr NeighborPoints(const WSPoint& pt, const WSPointCloudPtr cloud, double dRadius);
       WSNormal PointNormal(const WSPoint& pt, const WSPointCloudPtr cloud, double dRadius, const Eigen::Vector3f& refNormal);
+
+      // normal estimation
+      pcl::PolygonMesh PointCloudToMesh(const WSPointCloudPtr cloud, double resolution);
   };
 
 };

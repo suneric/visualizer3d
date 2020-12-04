@@ -40,6 +40,15 @@ int PCLViewer::CreateViewPort(double xmin,double ymin,double xmax,double ymax)
   return vp;
 }
 
+double PCLViewer::BBoxRadius(const WSPointCloudPtr cloud, Eigen::Vector4f& centroid)
+{
+  Eigen::Vector4f min, max;
+  pcl::compute3DCentroid(*cloud, centroid);
+  pcl::getMinMax3D<WSPoint>(*cloud, min, max);
+  double dRadius = 0.5*std::sqrt((max[0]-min[0])*(max[0]-min[0])+(max[1]-min[1])*(max[1]-min[1])+(max[2]-min[2])*(max[2]-min[2]));
+  return dRadius;
+}
+
 void PCLViewer::AddPointCloud(const WSPointCloudPtr cloud, int vp)
 {
 
@@ -51,10 +60,8 @@ void PCLViewer::AddPointCloud(const WSPointCloudPtr cloud, int vp)
   m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,1,name,vp);
 
   // set camera position
-  Eigen::Vector4f centroid, min, max;
-  pcl::compute3DCentroid(*cloud, centroid);
-  pcl::getMinMax3D<WSPoint>(*cloud, min, max);
-  double dRadius = 0.5*std::sqrt((max[0]-min[0])*(max[0]-min[0])+(max[1]-min[1])*(max[1]-min[1])+(max[2]-min[2])*(max[2]-min[2]));
+  Eigen::Vector4f centroid;
+  double dRadius = BBoxRadius(cloud, centroid);
   m_viewer->setCameraPosition(-1.2*dRadius,-1.2*dRadius,1.2*dRadius,centroid[0],centroid[1],centroid[2],0,0,1,vp);
 }
 
@@ -91,12 +98,13 @@ void PCLViewer::AddArrow(const WSPoint& startPt, const WSPoint& endPt, const std
   m_viewer->addArrow(startPt,endPt,1.0,0.0,0.0,false,name,vp);
 }
 
-void PCLViewer::AddMesh(const pcl::PolygonMesh& mesh)
+void PCLViewer::AddMesh(const pcl::PolygonMesh& mesh, double dRadius, const Eigen::Vector4f& centroid, int vp)
 {
   if (!m_viewer->updatePolygonMesh(mesh, "mesh"))
   {
     m_viewer->addPolygonMesh(mesh, "mesh");
     m_viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "mesh");
+    m_viewer->setCameraPosition(-1.2*dRadius,-1.2*dRadius,1.2*dRadius,centroid[0],centroid[1],centroid[2],0,0,1,vp);
   }
 }
 

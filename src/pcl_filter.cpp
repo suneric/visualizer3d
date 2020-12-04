@@ -10,7 +10,8 @@
 #include <pcl/features/normal_3d.h>
 //#include <pcl/filters/uniform_sampling.h>
 #include <pcl/keypoints/uniform_sampling.h>
-
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/surface/gp3.h>
 #include "pcl_filter.h"
 
 using namespace V3D;
@@ -306,4 +307,45 @@ WSNormal PCLFilter::PointNormal(const WSPoint& pt, const WSPointCloudPtr cloud, 
   normal.normal_y = nm.y();
   normal.normal_z = nm.z();
   return normal;
+}
+
+
+pcl::PolygonMesh PCLFilter::PointCloudToMesh(const WSPointCloudPtr cloud, double resolution)
+{
+  // follow
+  // https://pcl.readthedocs.io/projects/tutorials/en/latest/greedy_projection.html
+
+  // estimate normal
+  pcl::NormalEstimation<WSPoint, WSNormal> n;
+  pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+  pcl::search::KdTree<WSPoint>::Ptr tree(new pcl::search::KdTree<WSPoint>);
+  tree->setInputCloud(cloud);
+  n.setInputCloud(cloud);
+  n.setSearchMethod(tree);
+  n.setKSearch(20);
+  n.compute(*normals);
+
+  // concatenate the points and normals
+  WSNormalPointCloudPtr cloud_with_normal(new WSNormalPointCloud);
+  pcl::concatenateFields(*cloud,*normals,*cloud_with_normal);
+
+  // create search tree
+  pcl::search::KdTree<WSNormalPoint>::Ptr tree2(new pcl::search::KdTree<WSNormalPoint>);
+  tree2->setInputCloud(cloud_with_normal);
+
+  // fast triangulation
+  pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+  pcl::PolygonMesh mesh;
+  gp3.setSearchRadius(10*resolution);
+  gp3.setMu(2.5);
+  gp3.setMaximumNearestNeighbors(100);
+  gp3.setMaximumSurfaceAngle(M_PI/4);
+  gp3.setMinimumAngle(M_PI/18);
+  gp3.setMaximumAngle(2*M_PI/3);
+  gp3.setNormalConsistency(true);
+  gp3.setInputCloud(cloud_with_normal);
+  gp3.setSearchMethod(tree2);
+  gp3.reconstruct(mesh);
+
+  return mesh;
 }

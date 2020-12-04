@@ -33,9 +33,11 @@ namespace V3D
 
     int CreateViewPort(double xmin,double ymin,double xmax,double ymax);
 
+    double BBoxRadius(const WSPointCloudPtr cloud, Eigen::Vector4f& centroid);
+
     void AddPointCloud(const WSPointCloudPtr cloud, int viewport=0);
     void AddNormals(const WSPointCloudPtr cloud, const WSPointCloudNormalPtr normal, int size, double arrow, int viewport=0);
-    void AddMesh(const pcl::PolygonMesh& mesh);
+    void AddMesh(const pcl::PolygonMesh& mesh, double dRadius, const Eigen::Vector4f& centroid, int viewport=0);
     void AddArrow(const WSPoint& startPt, const WSPoint& endPt, const std::string& name, int viewport=0);
     void AddArrows(const WSPointCloudPtr cloud, const WSPointCloudNormalPtr normal, double length, int viewport=0);
     void AddCoordinateSystem(const Eigen::Affine3f& camPose, int idIndex, int viewport=0, bool removeall=false);
